@@ -170,25 +170,25 @@ def exampleSubscriptionHook(bot, channel, message, tags):
     if tags["msg-id"] == "resub":
         if tags["display-name"]:
             if not message:
-                print("Welcome back {} for {} months in a row!".format(tags["display-name"], tags["msg-param-months"]))
+                bot.sendMessage(channel, "Welcome back {} for {} months in a row!".format(tags["display-name"], tags["msg-param-months"]))
             else:
-                print("Welcome back {} for {} months in a row with the message: \"{}\"!".format(tags["display-name"], tags["msg-param-months"], message))
+                bot.sendMessage(channel, "Welcome back {} for {} months in a row with the message: \"{}\"!".format(tags["display-name"], tags["msg-param-months"], message))
         else:
             if not message:
-                print("Welcome back {} for {} months in a row!".format(tags["login"], tags["msg-param-months"]))
+                bot.sendMessage(channel, "Welcome back {} for {} months in a row!".format(tags["login"], tags["msg-param-months"]))
             else:
-                print("Welcome back {} for {} months in a row with the message: \"{}\"!".format(tags["login"], tags["msg-param-months"], message))
+                bot.sendMessage(channel, "Welcome back {} for {} months in a row with the message: \"{}\"!".format(tags["login"], tags["msg-param-months"], message))
     else:
         if tags["display-name"]:
             if not message:
-                print("Welcome {}!".format(tags["display-name"]))
+                bot.sendMessage(channel, "Welcome {}!".format(tags["display-name"]))
             else:
-                print("Welcome {} with the message: \"{}\"!".format(tags["display-name"], message))
+                bot.sendMessage(channel, "Welcome {} with the message: \"{}\"!".format(tags["display-name"], message))
         else:
             if not message:
-                print("Welcome {}!".format(tags["login"]))
+                bot.sendMessage(channel, "Welcome {}!".format(tags["login"]))
             else:
-                print("Welcome {} with the message: \"{}\"!".format(tags["login"], message))
+                bot.sendMessage(channel, "Welcome {} with the message: \"{}\"!".format(tags["login"], message))
 
 if __name__ == "__main__":
     # Initialize the bot, requires a valid username and password
