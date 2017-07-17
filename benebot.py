@@ -27,6 +27,7 @@ class Bot():
         self.channels = {channel: {"limit": limit, "timestamps": []} for channel, limit in channels}
         self.commands = []
         self.subscription_hooks = []
+        self.join_hooks = []
         self.socket = None
 
     def connect(self):
@@ -99,6 +100,15 @@ class Bot():
 
             subscription_hook["function"](self, channel, message, tags)
 
+    def onJoin(self, nickname, channel):
+        for join_hook in self.join_hooks:
+            if join_hook["nicknames"] is not None and nickname not in join_hook["nicknames"]:
+                continue
+            if join_hook["channels"] is not None and channel not in join_hook["channels"]:
+                continue
+
+            join_hook["function"](self, nickname, channel)
+
     def sendMessage(self, channel, message):
         if self.socket is not None:
             if channel not in self.channels:
@@ -118,26 +128,34 @@ class Bot():
     def addSubscriptionHook(self, function, channels=None):
         self.subscription_hooks.append({"function": function, "channels": channels})
 
+    def addJoinHook(self, function, nicknames=None, channels=None):
+        self.join_hooks.append({"function": function, "nicknames": nicknames, "channels": channels})
+
     def run(self):
         while self.socket is not None:
             data = self.socket.recv(4096)
-            string = data.strip()
+            lines = data.splitlines()
 
-            if string.startswith("PING"):
-                server = re.match("PING (?P<server>.*)", string).group("server")
-                self.sendPong(server)
-            else:
-                match = re.match("(@(?P<tags>\S+)\s)?:((?P<nickname>[a-zA-Z0-9_]+)!(?P=nickname)@(?P=nickname)\.)?tmi\.twitch\.tv (?P<action>[A-Z]+?) (?P<channel>#[a-zA-Z0-9_]+)(\s:(?P<message>.*))?", string)
+            for line in lines:
+                string = line.strip()
 
-                if match is not None:
-                    tags = None
-                    if match.group("tags") is not None:
-                        tags = {val[0]: val[1] for val in [tag.split("=") for tag in match.group("tags").split(";")]}
+                if string.startswith("PING"):
+                    server = re.match("PING (?P<server>.*)", string).group("server")
+                    self.sendPong(server)
+                else:
+                    match = re.match("(@(?P<tags>\S+)\s)?:((?P<nickname>[a-zA-Z0-9_]+)!(?P=nickname)@(?P=nickname)\.)?tmi\.twitch\.tv (?P<action>[A-Z]+?) (?P<channel>#[a-zA-Z0-9_]+)(\s:(?P<message>.*)?)?", string)
 
-                    if match.group("action") == "PRIVMSG":
-                        self.onMessage(match.group("nickname"), match.group("channel"), match.group("message"), tags)
-                    elif match.group("action") == "USERNOTICE":
-                        self.onSubscription(match.group("channel"), match.group("message"), tags)
+                    if match is not None:
+                        tags = None
+                        if match.group("tags") is not None:
+                            tags = {val[0]: val[1] for val in [tag.split("=") for tag in match.group("tags").split(";")]}
+
+                        if match.group("action") == "PRIVMSG":
+                            self.onMessage(match.group("nickname"), match.group("channel"), match.group("message"), tags)
+                        elif match.group("action") == "USERNOTICE":
+                            self.onSubscription(match.group("channel"), match.group("message"), tags)
+                        elif match.group("action") == "JOIN":
+                            self.onJoin(match.group("nickname"), match.group("channel"))
 
 
     def __del__(self):
@@ -190,6 +208,15 @@ def exampleSubscriptionHook(bot, channel, message, tags):
             else:
                 bot.sendMessage(channel, "Welcome {} with the message: \"{}\"!".format(tags["login"], message))
 
+############## JOIN HOOKS ###################
+# The signature of the functions must always be:
+#   bot: A reference to the bot, basically used for writing to a channel (e.g. bot.sendMessage(channel, message)
+#   nickname: The nickname of the user that joined the channel
+#   channel: The channel joined by the user
+def exampleJoinHook(bot, nickname, channel):
+    if nickname == "benesim" or nickname == "beneflight":
+        bot.sendMessage(channel, "Welcome {}".format(nickname))
+
 if __name__ == "__main__":
     # Initialize the bot, requires a valid username and password
     # Channels must be an iterable (e.g. list, tuple ...) containing another iterable with two entries.
@@ -209,6 +236,11 @@ if __name__ == "__main__":
 
     # Example of a subscription hook for all joined channels
     bot.addSubscriptionHook(exampleSubscriptionHook)
+
+    # Add the join hooks to the bot
+
+    # Example of a join hook for the channel "benesim"
+    bot.addJoinHook(exampleJoinHook, channels=("#benesim",))
 
     bot.connect()
     bot.run()
