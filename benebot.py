@@ -82,9 +82,9 @@ class Bot():
                 continue
 
             if command["starts_with"]:
-                regex = "^(?P<trigger>{})(?P<args>.*)".format(command["trigger"])
+                regex = "^(?P<trigger>{}{})(?P<args>.*)".format(command["trigger"], "\\b" if command["boundary"] else "")
             else:
-                regex = ".*(?P<trigger>{})(?P<args>.*)".format(command["trigger"])
+                regex = ".*(?P<trigger>{}{})(?P<args>.*)".format(command["trigger"], "\\b" if command["boundary"] else "")
 
             match = re.match(regex, message, flags=0 if command["case_sensitive"] else re.IGNORECASE)
 
@@ -122,8 +122,8 @@ class Bot():
                     self.socket.sendall("PRIVMSG {} :{}\r\n".format(channel, message))
                     self.channels[channel]["timestamps"].append(current_time)
 
-    def addCommand(self, function, trigger, nicknames=None, channels=None, case_sensitive=False, starts_with=True, cooldown=None):
-        self.commands.append({"function": function, "trigger": trigger, "nicknames": nicknames, "channels": channels, "case_sensitive": case_sensitive, "starts_with": starts_with, "cooldown": cooldown, "last_called": {}})
+    def addCommand(self, function, trigger, nicknames=None, channels=None, case_sensitive=False, starts_with=True, cooldown=None, boundary=False):
+        self.commands.append({"function": function, "trigger": trigger, "nicknames": nicknames, "channels": channels, "case_sensitive": case_sensitive, "starts_with": starts_with, "cooldown": cooldown, "boundary": boundary, "last_called": {}})
 
     def addSubscriptionHook(self, function, channels=None):
         self.subscription_hooks.append({"function": function, "channels": channels})
