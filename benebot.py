@@ -82,9 +82,9 @@ class Bot():
                 continue
 
             if command["starts_with"]:
-                regex = "^(?P<trigger>{}{})(?P<args>.*)".format(command["trigger"], "\\b" if command["boundary"] else "")
+                regex = "^(?P<trigger>{1}{0}{1})(?P<args>.*)".format(command["trigger"], "\\b" if command["boundary"] else "")
             else:
-                regex = ".*(?P<trigger>{}{})(?P<args>.*)".format(command["trigger"], "\\b" if command["boundary"] else "")
+                regex = ".*(?P<trigger>{1}{0}{1})(?P<args>.*)".format(command["trigger"], "\\b" if command["boundary"] else "")
 
             match = re.match(regex, message, flags=0 if command["case_sensitive"] else re.IGNORECASE)
 
